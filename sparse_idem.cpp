@@ -1,11 +1,10 @@
-#include <vector>
-
 template<typename T, typename F>
 struct sparse_table{
     std::vector<std::vector<T>> t;
     std::vector<int> lg;
     F f; // f must be idempotent
-    sparse_table(std::vector<T> a, F _f) : f(_f){
+    T e; // Neutral element
+    sparse_table(std::vector<T> a, F _f, T _e) : f(_f), e(_e){
         int n = a.size();
         lg.assign(n + 1, 0);
         lg[1] = 0;
@@ -23,5 +22,18 @@ struct sparse_table{
     T ask(int l, int r){
         int k =  lg[r - l + 1];
         return f(t[l][k], t[r - (1 << k) + 1][k]);
+    }
+    template<typename PredT>
+    int lower_bound(int i, PredT p){
+        if (p(t[i][0])) return i;
+        int n = t.size();
+        T cur = e;
+        for (int k = lg[n]; k >= 0; --k){
+            if (i + (1 << k) - 1 < n && !p(f(cur, t[i][k]))){
+                cur = f(cur, t[i][k]);
+                i += 1 << k;
+            }
+        }
+        return i;
     }
 };
